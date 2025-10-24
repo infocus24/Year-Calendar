@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ইন্টারেক্টিভ ক্যালেন্ডার — বাংলা,ইংরেজি ও হিজরি (Umm al-Qura) — আজকের তারিখ, বাংলা সন ও ঋতু।">
+<title>লাইভ ক্যালেন্ডার</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --card-bg:#ffffff;
+  --muted:#666;
+  --accent:#f39c12;
+}
+html,body{height:100%;margin:0;padding:0;background:#f5f7fb;font-family:'Noto Sans Bengali',Arial,sans-serif;color:#222;}
+.container{max-width:1200px;margin:30px auto;padding:28px;background:var(--card-bg);border-radius:14px;box-shadow:0 8px 30px rgba(15,23,42,0.06);}
+.short-title{
+    text-align:center;
+    font-weight:900;
+    font-size:28px;
+    margin-bottom:20px;
+    padding:16px 20px;
+    border-radius:12px;
+    color:#fff;
+    background: linear-gradient(90deg,#667eea,#764ba2);
+    box-shadow:0 4px 15px rgba(0,0,0,0.1);
+}
+.header-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    background: linear-gradient(90deg,#10b981,#3b82f6);
+    padding:15px 20px;
+    border-radius:12px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+.left-col, .right-col{
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding:10px;
+}
+.controls label{font-weight:700;font-size:14px;margin-right:8px;}
+.controls select{padding:6px 10px;border-radius:6px;border:1px solid #ccc;}
+.period-label{font-size:18px;font-weight:800;margin-top:8px;color:#fff;}
+.clock{font-size:36px;font-weight:900;color:#fff;margin-top:8px;}
+#todayBlock{font-weight:800;font-size:16px;line-height:1.5;white-space:pre-line;color:#fff;}
+.month{margin-top:30px;}
+.month-title{font-size:22px;font-weight:900;text-align:center;padding:12px 20px;border-radius:12px;color:#fff;margin-bottom:14px;background:linear-gradient(90deg,#667eea,#764ba2);}
+.current-month-highlight{box-shadow:0 10px 20px rgba(243,156,18,0.25);}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;}
+.day-name{background:#f0f0f0;border:1px solid #eef2f6;padding:8px;text-align:center;border-radius:8px;font-weight:800;font-size:13px;color:#223;}
+.day{background:#f9f9f9;border:1px solid #eef2f6;min-height:96px;padding:10px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:6px;}
+.day.today{border:2px solid var(--accent);background:#fff8e6;}
+.date-greg,.date-hijri,.date-bangla{text-align:center;}
+.date-greg{font-weight:900;font-size:18px;color:#0f172a;}
+.date-hijri,.date-bangla{font-size:13px;color:#444;}
+.powered{text-align:center;font-size:11px;color:#8b97a8;margin-top:12px;}
+.footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px;}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="short-title">বাংলা,ইংরেজি ও হিজরি ক্যালেন্ডার</div>
+  <div class="header-row">
+    <div class="left-col">
+      <div class="controls">
+        <label>Year:
+          <select id="yearSelect"></select>
+        </label>
+        <label>Language:
+          <select id="langSelect">
+            <option value="bn">বাংলা (UI)</option>
+            <option value="en">English (UI)</option>
+          </select>
+        </label>
+      </div>
+      <div style="margin-top:10px;">
+        <div id="periodLabel" class="period-label" aria-live="polite"></div>
+        <div id="clockLarge" class="clock" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="right-col">
+      <div id="todayBlock" aria-live="polite"></div>
+    </div>
+  </div>
+  <div id="calendarArea"></div>
+  <div class="footer">© <span id="footYear"></span> Interactive Calendar. All rights reserved.</div>
+</div>
+<script>
+// ====== Data ======
+const monthsEn=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const banglaMonths=["বৈশাখ","জ্যৈষ্ঠ","আষাঢ়","শ্রাবণ","ভাদ্র","আশ্বিন","কার্তিক","অগ্রহায়ণ","পৌষ","মাঘ","ফাল্গুন","চৈত্র"];
+const hijriMonthsBn=["মুহাররম","সফর","রবিউল আউয়াল","রবিউস সানি","জমাদিউল আউয়াল","জমাদিউস সানি","রজব","শাবান","রমজান","শাওয়াল","জিলকদ","জিলহজ্জ"];
+const weekdayGridBn=["শনিবার","রবিবার","সোমবার","মঙ্গলবার","বুধবার","বৃহস্পতিবার","শুক্রবার"];
+const monthToSeason=["শীতকাল","বসন্তকাল","বসন্তকাল","গ্রীষ্মকাল","গ্রীষ্মকাল","বর্ষাকাল","বর্ষাকাল","শরৎকাল","শরৎকাল","হেমন্তকাল","হেমন্তকাল","শীতকাল"];
+const seasonColors={"শীতকাল":"linear-gradient(90deg,#60a5fa,#3b82f6)","বসন্তকাল":"linear-gradient(90deg,#34d399,#10b981)","গ্রীষ্মকাল":"linear-gradient(90deg,#fb923c,#f97316)","বর্ষাকাল":"linear-gradient(90deg,#a78bfa,#7c3aed)","শরৎকাল":"linear-gradient(90deg,#f6c44a,#f59e0b)","হেমন্তকাল":"linear-gradient(90deg,#34b3a3,#0ea5a1)"};
+const yearSelect=document.getElementById('yearSelect');
+const langSelect=document.getElementById('langSelect');
+const periodLabel=document.getElementById('periodLabel');
+const clockLarge=document.getElementById('clockLarge');
+const todayBlock=document.getElementById('todayBlock');
+const calendarArea=document.getElementById('calendarArea');
+const footYear=document.getElementById('footYear');
+const now=new Date();
+const currentYear=now.getFullYear();
+footYear.textContent=currentYear;
+for(let y=currentYear;y<=currentYear+30;y++){const o=document.createElement('option');o.value=y;o.textContent=y;yearSelect.appendChild(o);}
+yearSelect.value=currentYear;
+
+// ====== Helpers ======
+function pad(n){return String(n).padStart(2,'0');}
+function toBengaliDigits(s){return String(s).split('').map(c=>{if(c>='0'&&c<='9'){const map={'0':'০','1':'১','2':'২','3':'৩','4':'৪','5':'৫','6':'৬','7':'৭','8':'৮','9':'৯'};return map[c];}return c;}).join('');}
+
+// ====== Hijri & Bangla ======
+function getHijriParts(date){
+    // সরাসরি hijriMonthsBn ব্যবহার (সঠিক হিজরী আপডেট)
+    const fmtEn = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { day:'2-digit', month:'numeric', year:'numeric' });
+    const parts = fmtEn.formatToParts(date);
+    const day = parseInt(parts.find(p=>p.type==='day').value);
+    const monthIndex = parseInt(parts.find(p=>p.type==='month').value) - 1;
+    const year = parseInt(parts.find(p=>p.type==='year').value);
+    return { d: day, mName: hijriMonthsBn[monthIndex], y: year, mIndex: monthIndex };
+}
+
+function toBanglaAccurate(gDate){
+  const gY=gDate.getFullYear();
+  const startBoishakhThisYear=new Date(gY,3,14);
+  const base=(gDate>=startBoishakhThisYear)?gY:gY-1;
+  const starts=[new Date(base,3,14),new Date(base,4,15),new Date(base,5,15),new Date(base,6,16),new Date(base,7,16),new Date(base,8,16),new Date(base,9,17),new Date(base,10,16),new Date(base,11,16),new Date(base+1,0,15),new Date(base+1,1,13),new Date(base+1,2,15)];
+  let idx=11;
+  for(let i=0;i<starts.length;i++){
+    const start=starts[i];
+    const next=(i<starts.length-1)?starts[i+1]:new Date(base+1,3,14);
+    if(gDate>=start && gDate<next){idx=i;break;}
+  }
+  const day=Math.floor((gDate-starts[idx])/(1000*60*60*24))+1;
+  const banglaYear=base-593;
+  return {d:day,mIndex:idx,mName:banglaMonths[idx],y:banglaYear};
+}
+
+// ====== Period ======
+function getPeriod(nowDate){
+  const h=nowDate.getHours();
+  if(h>=4 && h<12) return 'সকাল';
+  if(h>=12 && h<15) return 'দুপুর';
+  if(h>=15 && h<18) return 'বিকেল';
+  if(h>=18 && h<21) return 'সন্ধ্যা';
+  return 'রাত';
+}
+
+// ====== Today Block ======
+function renderTodayBlock(){
+    const today=new Date();
+    const weekdayBn=['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার'];
+    const wd=weekdayBn[today.getDay()];
+    const season=monthToSeason[today.getMonth()];
+    const gLine=`${today.getDate()}-${monthsEn[today.getMonth()]}-${today.getFullYear()} [ খ্রিষ্টাব্দ ]`;
+    const hij=getHijriParts(today);
+    const hLine=`${pad(hij.d)}-${hij.mName}-${hij.y} [ হিজরি ]`;
+    const b=toBanglaAccurate(today);
+    const bLine=`${toBengaliDigits(pad(b.d))}-${b.mName}-${toBengaliDigits(b.y)} [ বঙ্গাব্দ ]`;
+    todayBlock.innerText=`আজ ${wd} [ ${season} ]\n\n${gLine}\n${hLine}\n${bLine}`;
+}
+
+// ====== Build Calendar ======
+function buildCalendar(){
+    calendarArea.innerHTML='';
+    const year=Number(yearSelect.value);
+    const uiLang=langSelect.value;
+    const weekdayLabels=(uiLang==='en')?["Saturday","Sunday","Monday","Tuesday","Wednesday","Thursday","Friday"]:weekdayGridBn;
+    const todayMonth=new Date().getMonth();
+    const todayDateString=new Date().toDateString();
+    for(let m=0;m<12;m++){
+        const monthWrap=document.createElement('div'); monthWrap.className='month';
+        const titleEl=document.createElement('div'); titleEl.className='month-title';
+        const season=monthToSeason[m];
+        const gDate=new Date(year,m,1);
+        const bangla=toBanglaAccurate(gDate);
+        const hij=getHijriParts(gDate);
+        titleEl.textContent=`${monthsEn[m]} - ${bangla.mName} - ${hij.mName} [ ${season} ]`;
+        titleEl.style.background=seasonColors[season];
+        if(m===todayMonth) titleEl.classList.add('current-month-highlight');
+        monthWrap.appendChild(titleEl);
+
+        const grid=document.createElement('div'); grid.className='calendar-grid';
+        weekdayLabels.forEach(label=>{const el=document.createElement('div');el.className='day-name';el.textContent=label;grid.appendChild(el);});
+        const firstDayRaw=new Date(year,m,1).getDay(); const firstIndex=(firstDayRaw+1)%7;
+        for(let i=0;i<firstIndex;i++){grid.appendChild(document.createElement('div'));}
+        const daysInMonth=new Date(year,m+1,0).getDate();
+        for(let d=1;d<=daysInMonth;d++){
+            const gDate=new Date(year,m,d); const dayEl=document.createElement('div'); dayEl.className='day';
+            if(gDate.toDateString()===todayDateString) dayEl.classList.add('today');
+            const line1=document.createElement('div'); line1.className='date-greg'; line1.textContent=String(d);
+            const hij=getHijriParts(gDate);
+            const line2=document.createElement('div'); line2.className='date-hijri'; line2.textContent=`${pad(hij.d)} [ ${hij.mName} ]`;
+            const b=toBanglaAccurate(gDate);
+            const line3=document.createElement('div'); line3.className='date-bangla'; line3.textContent=`${toBengaliDigits(pad(b.d))} [ ${b.mName} ]`;
+            dayEl.appendChild(line1);
+            dayEl.appendChild(line2);
+            dayEl.appendChild(line3);
+            grid.appendChild(dayEl);
+        }
+        monthWrap.appendChild(grid);
+        const powered=document.createElement('div'); powered.className='powered'; powered.textContent='Powered by InfocusNewsToday24';
+        monthWrap.appendChild(powered);
+        calendarArea.appendChild(monthWrap);
+    }
+}
+
+// ====== Clock & Live Update ======
+function updateClock(){
+  const now=new Date();
+  let hh=now.getHours();
+  const ampm=hh>=12?'PM':'AM';
+  let displayH=hh%12; if(displayH===0) displayH=12;
+  const mm=pad(now.getMinutes()), ss=pad(now.getSeconds());
+  clockLarge.textContent=`${pad(displayH)}:${mm}:${ss} ${ampm}`;
+  periodLabel.textContent=`এখন ${getPeriod(now)}`;
+  renderTodayBlock();
+}
+
+// ====== Initial Render ======
+buildCalendar();
+renderTodayBlock();
+updateClock();
+setInterval(updateClock,1000);
+
+// ====== Interactions ======
+yearSelect.addEventListener('change',()=>{buildCalendar();renderTodayBlock();});
+langSelect.addEventListener('change',()=>{buildCalendar();renderTodayBlock();});
+</script>
+</body>
+</html>
