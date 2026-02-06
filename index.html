@@ -85,7 +85,25 @@ html,body{height:100%;margin:0;padding:0;background:#f5f7fb;font-family:'Noto Sa
     </div>
   </div>
   <div id="calendarArea"></div>
-  <div class="footer">© <span id="footYear"></span> Interactive Calendar. All rights reserved.</div>
+ <!-- Footer -->
+  <p style="
+    font-weight: 600;
+    font-size: 14px;
+    color: #1E3A8A;
+    text-align: center;
+    letter-spacing: 0.5px;
+    background: linear-gradient(to right, #1E3A8A, #3B82F6, #10B981, #F59E0B);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  ">
+    Copyright © <span id="footerYear"></span> - Powered by - <strong>InFocusNewsToday24</strong> | All Rights Reserved
+  </p>
+</div>
+
+<script>
+  document.getElementById('footerYear').textContent = new Date().getFullYear();
+</script>
+</div>
 </div>
 <script>
 // ====== Data ======
@@ -232,3 +250,4 @@ langSelect.addEventListener('change',()=>{buildCalendar();renderTodayBlock();});
 </script>
 </body>
 </html>
+
