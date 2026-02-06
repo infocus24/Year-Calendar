@@ -84,9 +84,10 @@ html,body{height:100%;margin:0;padding:0;background:#f5f7fb;font-family:'Noto Sa
       <div id="todayBlock" aria-live="polite"></div>
     </div>
   </div>
+  
   <div id="calendarArea"></div>
- <!-- Footer -->
-  <p style="
+ <div class="footer">
+<p style="
     font-weight: 600;
     font-size: 14px;
     color: #1E3A8A;
@@ -96,8 +97,9 @@ html,body{height:100%;margin:0;padding:0;background:#f5f7fb;font-family:'Noto Sa
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   ">
-    Copyright © <span id="footerYear"></span> - Powered by - <strong>InFocusNewsToday24</strong> | All Rights Reserved
-  </p>
+Copyright © <span id="footYear"></span> - <strong>InFocusNewsToday24</strong> | All rights reserved</p>
+
+</div>
 </div>
 
 <script>
@@ -250,4 +252,5 @@ langSelect.addEventListener('change',()=>{buildCalendar();renderTodayBlock();});
 </script>
 </body>
 </html>
+
 
